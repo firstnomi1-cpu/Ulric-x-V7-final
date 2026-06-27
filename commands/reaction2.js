@@ -1,0 +1,148 @@
+/**
+ * Ulric-X MD - Additional Reaction Commands (100+)
+ * Each command sends a reaction message with emoji + anime-style image.
+ */
+const utils = require('../lib/utils');
+const config= require('../config');
+
+// Reactions list: name -> [emoji, action text, anime theme]
+const REACTIONS = [
+  ['awkward',   ['😅', 'feels awkward around', 'embarrassed anime character']],
+  ['bored2',    ['🥱', 'is bored by', 'anime character yawning']],
+  ['bruh',      ['Bruh', 'says bruh to', 'anime bruh moment']],
+  ['cheer',     ['📣', 'cheers for', 'anime cheerleader']],
+  ['confused2', ['❓', 'is confused by', 'anime confused character']],
+  ['cool3',     ['😎', 'finds', 'cool anime character']],
+  ['cringe',    ['😬', 'cringes at', 'anime cringe']],
+  ['cry2',      ['😭', 'cries over', 'anime crying scene']],
+  ['cute',      ['🥰', 'finds', 'cute anime character']],
+  ['dance2',    ['💃', 'dances with', 'anime dancing']],
+  ['dab',       ['🙌', 'dabs at', 'anime dab']],
+  ['dead2',     ['💀', 'is dead from', 'anime death']],
+  ['derp',      ['🤪', 'derps at', 'anime derp face']],
+  ['disgust2',  ['🤢', 'is disgusted by', 'anime disgusted']],
+  ['drip',      ['💧', 'has drip compared to', 'anime drip fashion']],
+  ['eat',       ['🍽️', 'eats with', 'anime eating']],
+  ['evil',      ['😈', 'is plotting against', 'evil anime character']],
+  ['excited',   ['🤩', 'is excited about', 'excited anime character']],
+  ['facepalm2', ['🤦', 'facepalms at', 'anime facepalm']],
+  ['faint',     ['😵', 'faints from', 'anime faint']],
+  ['flex',      ['💪', 'flexes on', 'anime muscle flex']],
+  ['fly',       ['🦅', 'flies with', 'anime flying character']],
+  ['freeze',    ['🥶', 'freezes around', 'anime frozen']],
+  ['friendly',  ['🤗', 'is friendly to', 'anime friendly character']],
+  ['gasp',      ['😮', 'gasp at', 'anime gasp']],
+  ['giggle',    ['teehee', 'giggles at', 'anime giggle']],
+  ['glare',     ['😡', 'glares at', 'anime glare']],
+  ['gloat',     ['😏', 'gloats at', 'anime gloat']],
+  ['greet',     ['👋', 'greets', 'anime greeting']],
+  ['grin',      ['😁', 'grins at', 'anime grin']],
+  ['grumpy',    ['😠', 'is grumpy at', 'grumpy anime character']],
+  ['happy2',    ['😄', 'is happy with', 'anime happy face']],
+  ['hardwork',  ['💪', 'works hard with', 'anime hard work']],
+  ['heh',       ['heh', 'hehs at', 'anime smirk']],
+  ['hello',     ['🤗', 'says hello to', 'anime hello']],
+  ['hide',      ['🙈', 'hides from', 'anime hiding']],
+  ['highfive2', ['🖐️', 'high-fives', 'anime high five']],
+  ['hmph',      ['hmph', 'hmphs at', 'anime hmph']],
+  ['hopeful',   ['🙏', 'is hopeful about', 'anime hopeful character']],
+  ['horny',     ['😏', 'is attracted to', 'anime attracted']],
+  ['huh',       ['huh?', 'is confused about', 'anime huh']],
+  ['hungry',    ['🤤', 'is hungry for', 'anime hungry']],
+  ['impressed', ['🤯', 'is impressed by', 'anime impressed']],
+  ['jealous',   ['😒', 'is jealous of', 'anime jealous']],
+  ['jump',      ['🤸', 'jumps for', 'anime jumping']],
+  ['kawaii',    ['🌸', 'finds', 'kawaii anime character']],
+  ['laugh2',    ['😂', 'laughs at', 'anime laughing']],
+  ['lazy2',     ['😴', 'is too lazy for', 'anime lazy character']],
+  ['lewd',      ['😳', 'finds', 'lewd anime character']],
+  ['mad2',      ['😡', 'is mad at', 'anime mad face']],
+  ['meh',       ['meh', 'feels meh about', 'anime meh']],
+  ['moan',      ['sigh', 'moans about', 'anime sigh']],
+  ['motivated', ['💪', 'is motivated by', 'anime motivated character']],
+  ['nani',      ['NANI?!', 'is shocked by', 'anime shocked nani']],
+  ['nervous2',  ['😬', 'is nervous around', 'anime nervous character']],
+  ['no',        ['🚫', 'says no to', 'anime no']],
+  ['noble',     ['👑', 'finds', 'noble anime character']],
+  ['nom',       ['nom nom', 'noms on', 'anime eating cute']],
+  ['oops',      ['oops', 'says oops to', 'anime oops']],
+  ['outraged',  ['🤬', 'is outraged by', 'anime outraged']],
+  ['panic',     ['😱', 'panics at', 'anime panic']],
+  ['party2',    ['🎉', 'parties with', 'anime party']],
+  ['pep',       ['💪', 'peps up', 'anime pep']],
+  ['plead',     ['🥺', 'pleads with', 'anime pleading']],
+  ['point',     ['👉', 'points at', 'anime pointing']],
+  ['pout',      ['😤', 'pouts at', 'anime pout']],
+  ['pray2',     ['🙏', 'prays for', 'anime praying']],
+  ['proud',     ['🥹', 'is proud of', 'anime proud']],
+  ['punch2',    ['🥊', 'punches', 'anime punch']],
+  ['rage',      ['😤', 'rages at', 'anime rage']],
+  ['read',      ['📖', 'reads with', 'anime reading']],
+  ['relax',     ['😌', 'relaxes with', 'anime relax']],
+  ['relieved',  ['phew', 'is relieved about', 'anime relieved']],
+  ['respect',   ['🫡', 'respects', 'anime respect']],
+  ['roar',      ['🦁', 'roars at', 'anime roar']],
+  ['roll',      ['🤣', 'rolls on the floor laughing at', 'anime rolling laugh']],
+  ['run',       ['🏃', 'runs from', 'anime running']],
+  ['sad2',      ['😢', 'is sad about', 'anime sad']],
+  ['salute',    ['🫡', 'salutes', 'anime salute']],
+  ['scared2',   ['😨', 'is scared of', 'anime scared']],
+  ['scream',    ['😱', 'screams at', 'anime scream']],
+  ['shake',     ['🤝', 'shakes hands with', 'anime handshake']],
+  ['shocked',   ['😨', 'is shocked by', 'anime shocked']],
+  ['shy2',      ['😳', 'is shy around', 'anime shy']],
+  ['sigh2',     ['😔', 'sighs at', 'anime sigh']],
+  ['sing2',     ['🎤', 'sings for', 'anime singing']],
+  ['sleep2',    ['😴', 'sleeps on', 'anime sleeping']],
+  ['slowclap',  ['👏', 'slow-claps for', 'anime slow clap']],
+  ['smile2',    ['😊', 'smiles at', 'anime smile']],
+  ['smirk',     ['😏', 'smirks at', 'anime smirk']],
+  ['sneaky',    ['🤫', 'is sneaky with', 'anime sneaky']],
+  ['sorry',     ['🙏', 'apologizes to', 'anime sorry']],
+  ['spin',      ['🌀', 'spins with', 'anime spinning']],
+  ['squeeze',   ['🤗', 'squeezes', 'anime hug tight']],
+  ['starstruck',['🤩', 'is starstruck by', 'anime starstruck']],
+  ['stare',     ['👀', 'stares at', 'anime staring']],
+  ['stop',      ['✋', 'says stop to', 'anime stop']],
+  ['strut',     ['🚶', 'struts with', 'anime strut']],
+  ['stunned',   ['😮', 'is stunned by', 'anime stunned']],
+  ['sulk',      ['😠', 'sulks about', 'anime sulk']],
+  ['surprised2',['😲', 'is surprised by', 'anime surprised']],
+  ['sweat',     ['😅', 'sweats around', 'anime sweat drop']],
+  ['tantrum',   ['🤬', 'throws a tantrum at', 'anime tantrum']],
+  ['tease',     ['😜', 'teases', 'anime teasing']],
+  ['thank',     ['🙏', 'thanks', 'anime thank you']],
+  ['thumbsup2', ['👍', 'gives thumbs up to', 'anime thumbs up']],
+  ['tired2',    ['🥱', 'is tired of', 'anime tired']],
+  ['triggered', ['😤', 'is triggered by', 'anime triggered']],
+  ['twitch',    ['💢', 'twitches at', 'anime twitch']],
+  ['ugh',       ['ugh', 'ughs at', 'anime ugh']],
+  ['vote',      ['🗳️', 'votes for', 'anime vote']],
+  ['wave2',     ['👋', 'waves at', 'anime wave']],
+  ['whistle',   ['🎵', 'whistles at', 'anime whistle']],
+  ['wow2',      ['wow!', 'is wowed by', 'anime wow']],
+  ['yawn',      ['🥱', 'yawns at', 'anime yawn']],
+  ['yay',       ['🎉', 'yays for', 'anime yay']],
+  ['yes',       ['✅', 'says yes to', 'anime yes']],
+  ['yolo',      ['YOLO', 'says YOLO to', 'anime yolo']],
+  ['yum',       ['😋', 'finds', 'yum anime food']],
+  ['zealous',   ['🔥', 'is zealous about', 'anime zealous']]
+];
+
+module.exports = REACTIONS.map(([name, [emoji, action, theme]]) => ({
+  name, alias: [], category: 'reaction', desc: `Reaction: ${name}`,
+  handler: async (ctx) => {
+    const target = ctx.mentionedJid?.[0];
+    const targetText = target ? `@${target.split('@')[0]}` : 'everyone';
+    const sender = ctx.pushname || 'Someone';
+    const mentions = target ? [target] : [];
+    // Send emoji reaction first
+    await ctx.reply(`${emoji} ${sender} ${action} ${targetText}`, { mentions });
+    // Optionally send anime-style image via Pollinations
+    try {
+      const url = `${config.API.pollinations_img}${encodeURIComponent(theme + ' anime style sticker, cute')}`;
+      // Don't always send image to avoid spam - only every 3rd reaction
+      if (Math.random() < 0.3) await ctx.replyImg(url, `${emoji} ${name}`);
+    } catch {}
+  }
+}));
