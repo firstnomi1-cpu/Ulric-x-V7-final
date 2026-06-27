@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ulric-X MD - Admin Panel</title>
+<link rel="icon" href="https://i.postimg.cc/yx314j9t/WA-1781354644910.jpg">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="container">
+  <header>
+    <img src="https://i.postimg.cc/yx314j9t/WA-1781354644910.jpg" class="logo" alt="Ulric-X MD">
+    <h1>ADMIN PANEL</h1>
+    <div class="sub">Ulric-X MD &bull; Bot Control Center</div>
+  </header>
+
+  <nav>
+    <a href="/">Pair</a>
+    <a href="/panel">Dashboard</a>
+    <a href="/admin" class="active">Admin</a>
+  </nav>
+
+  <!-- Login -->
+  <div class="panel" id="loginPanel">
+    <h2>🔐 Admin Login</h2>
+    <p style="margin-bottom:14px;color:#9aa5b6;font-size:13px;">
+      Default password is set in <code>.env</code> file as <code>ADMIN_PASS</code>.
+    </p>
+    <div class="row">
+      <input type="password" id="adminPass" placeholder="Admin password" onkeydown="if(event.key==='Enter')doLogin()">
+      <button onclick="doLogin()">🔓 Login</button>
+    </div>
+  </div>
+
+  <!-- Admin Dashboard (hidden until logged in) -->
+  <div id="adminPanel" class="hidden">
+    <div class="cards">
+      <div class="card">
+        <div class="ico">👥</div>
+        <div class="label">Users</div>
+        <div class="value" id="u">-</div>
+      </div>
+      <div class="card">
+        <div class="ico">🟢</div>
+        <div class="label">Online</div>
+        <div class="value" id="o">-</div>
+      </div>
+      <div class="card">
+        <div class="ico">📦</div>
+        <div class="label">Commands</div>
+        <div class="value" id="c">-</div>
+      </div>
+      <div class="card">
+        <div class="ico">📊</div>
+        <div class="label">Total Run</div>
+        <div class="value" id="r">-</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="users">👥 Users</div>
+      <div class="tab" data-tab="broadcast">📢 Broadcast</div>
+      <div class="tab" data-tab="commands">📦 Commands</div>
+      <div class="tab" data-tab="logout">🚪 Logout</div>
+    </div>
+
+    <!-- Users tab -->
+    <div class="panel" id="tab-users">
+      <h2>👥 Paired Users <button class="refresh-btn" onclick="loadState()">🔄 Refresh</button></h2>
+      <table>
+        <thead>
+          <tr><th>#</th><th>Number</th><th>Country</th><th>Status</th><th>Cmds</th><th>Paired</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="usersTable">
+          <tr><td colspan="7" style="text-align:center;color:#6b7280;">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Broadcast tab -->
+    <div class="panel hidden" id="tab-broadcast">
+      <h2>📢 Broadcast Message</h2>
+      <p style="margin-bottom:10px;color:#9aa5b6;font-size:13px;">
+        Send a message to all paired WhatsApp users and their groups.
+      </p>
+      <textarea id="bcastText" rows="4" placeholder="Enter broadcast message..." style="width:100%;margin-bottom:10px;"></textarea>
+      <div class="row">
+        <select id="bcastMode">
+          <option value="all">All users + their groups</option>
+          <option value="owner_groups">Owner's groups only</option>
+        </select>
+        <button onclick="sendBroadcast()">📢 Send Broadcast</button>
+      </div>
+      <div id="bcastResult" class="hidden" style="margin-top:10px;padding:10px;background:rgba(0,210,255,0.1);border-radius:8px;font-size:13px;"></div>
+    </div>
+
+    <!-- Commands list -->
+    <div class="panel hidden" id="tab-commands">
+      <h2>📦 All Commands <input type="text" id="cmdFilter" placeholder="🔍 Filter commands..." oninput="renderCmds()" style="font-size:12px;padding:6px 10px;"></h2>
+      <div id="cmdList" style="max-height:500px;overflow-y:auto;font-size:12px;">
+        <p style="color:#6b7280;">Loading...</p>
+      </div>
+    </div>
+
+    <!-- Logout tab -->
+    <div class="panel hidden" id="tab-logout">
+      <h2>🚪 Logout</h2>
+      <p style="margin-bottom:14px;color:#9aa5b6;">Click to end your admin session.</p>
+      <button class="danger" onclick="doLogout()">🚪 Logout</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    &copy; 2024 Ulric-X MD &bull; ULRIC X SHAH &bull; +923189335011
+  </div>
+</div>
+
+<script>
+let allCmds = [];
+
+// Tabs
+document.querySelectorAll('.tab').forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.querySelectorAll('[id^="tab-"]').forEach(p => p.classList.add('hidden'));
+    document.getElementById('tab-' + t.dataset.tab).classList.remove('hidden');
+  };
+});
+
+// Login
+async function doLogin() {
+  const pass = document.getElementById('adminPass').value;
+  try {
+    const r = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pass })
+    }).then(r => r.json());
+    if (r.ok) {
+      document.getElementById('loginPanel').classList.add('hidden');
+      document.getElementById('adminPanel').classList.remove('hidden');
+      loadState();
+      loadCmds();
+      toast('✅ Logged in as admin');
+    } else {
+      toast('❌ Wrong password');
+    }
+  } catch (e) { toast('❌ ' + e.message); }
+}
+
+async function doLogout() {
+  await fetch('/api/logout', { method: 'POST' });
+  location.reload();
+}
+
+async function loadState() {
+  try {
+    const r = await fetch('/api/state').then(r => r.json());
+    if (!r.ok) return;
+    document.getElementById('u').textContent = r.users.length;
+    document.getElementById('o').textContent = r.connections.filter(c => c.status === 'open').length;
+    document.getElementById('c').textContent = r.stats.totalCommands || 0;
+    document.getElementById('r').textContent = r.stats.totalCommandsRun || 0;
+    const tb = document.getElementById('usersTable');
+    if (!r.users.length) {
+      tb.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#6b7280;">No users yet</td></tr>';
+      return;
+    }
+    tb.innerHTML = r.users.map((u, i) => {
+      const conn = r.connections.find(c => c.jid === u.jid);
+      const status = conn ? conn.status : 'offline';
+      return `<tr>
+        <td>${i+1}</td>
+        <td>${u.number}</td>
+        <td>${u.country}</td>
+        <td><span class="status-dot status-${status}"></span>${status}</td>
+        <td>${u.commandsRun}</td>
+        <td>${new Date(u.pairedAt).toLocaleDateString()}</td>
+        <td><button class="danger" style="padding:4px 10px;font-size:11px;" onclick="unpairUser('${u.jid}')">Unpair</button></td>
+      </tr>`;
+    }).join('');
+  } catch (e) { console.error(e); }
+}
+
+async function unpairUser(jid) {
+  if (!confirm('Unpair ' + jid.split('@')[0] + '?')) return;
+  try {
+    await fetch('/api/unpair', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jid })
+    });
+    toast('✅ Unpaired');
+    loadState();
+  } catch (e) { toast('❌ ' + e.message); }
+}
+
+async function sendBroadcast() {
+  const text = document.getElementById('bcastText').value;
+  const mode = document.getElementById('bcastMode').value;
+  if (!text) { toast('Enter a message'); return; }
+  const res = document.getElementById('bcastResult');
+  res.classList.remove('hidden');
+  res.textContent = '⏳ Sending...';
+  try {
+    const r = await fetch('/api/broadcast', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, mode })
+    }).then(r => r.json());
+    if (r.ok) {
+      res.textContent = `✅ Broadcast sent to ${r.sent} chats!`;
+    } else {
+      res.textContent = '❌ ' + (r.error || 'Failed');
+    }
+  } catch (e) { res.textContent = '❌ ' + e.message; }
+}
+
+async function loadCmds() {
+  try {
+    const r = await fetch('/api/commands').then(r => r.json());
+    if (r.ok) { allCmds = r.commands; renderCmds(); }
+  } catch (e) { console.error(e); }
+}
+
+function renderCmds() {
+  const q = (document.getElementById('cmdFilter').value || '').toLowerCase();
+  const list = document.getElementById('cmdList');
+  const filtered = q ? allCmds.filter(c => c.name.includes(q) || c.desc.toLowerCase().includes(q)) : allCmds;
+  list.innerHTML = `<p style="color:#6b7280;margin-bottom:8px;">Showing ${filtered.length} of ${allCmds.length} commands:</p>` +
+    filtered.slice(0, 300).map(c => `<div style="padding:6px 10px;border-bottom:1px solid rgba(255,255,255,0.05);">
+      <code style="color:#00d2ff;">.${c.name}</code>
+      <span class="tag">[${c.category}]</span>
+      <span style="color:#9aa5b6;">${c.desc || ''}</span>
+    </div>`).join('');
+}
+
+function toast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+
+// Check if already logged in
+fetch('/api/state').then(r => r.json()).then(r => {
+  if (r.ok) {
+    // State is public, but admin actions need login - we keep login panel until /api/login succeeds
+  }
+});
+
+// Auto-refresh
+setInterval(() => {
+  if (!document.getElementById('adminPanel').classList.contains('hidden')) loadState();
+}, 5000);
+</script>
+</body>
+  </html>
+          
