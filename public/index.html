@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ulric-X MD | WhatsApp Bot Pairing</title>
+<link rel="icon" href="https://i.postimg.cc/yx314j9t/WA-1781354644910.jpg">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+<style>
+.status-banner {
+  padding: 14px 20px;
+  border-radius: 12px;
+  margin: 16px 0;
+  font-size: 14px;
+  font-weight: 500;
+  display: none;
+  align-items: center;
+  gap: 10px;
+}
+.status-banner.show { display: flex; animation: slideIn .3s; }
+.status-banner.idle { background: rgba(154,165,182,0.1); color: var(--text-muted); border: 1px solid var(--border); }
+.status-banner.requesting { background: rgba(0,210,255,0.1); color: var(--primary); border: 1px solid var(--primary); }
+.status-banner.code_generated { background: rgba(255,140,0,0.1); color: var(--accent); border: 1px solid var(--accent); }
+.status-banner.connecting { background: rgba(245,158,11,0.1); color: var(--warning); border: 1px solid var(--warning); }
+.status-banner.connected { background: rgba(74,222,128,0.15); color: var(--success); border: 1px solid var(--success); }
+.status-banner.failed { background: rgba(239,68,68,0.1); color: var(--danger); border: 1px solid var(--danger); }
+.status-banner.expired { background: rgba(245,158,11,0.1); color: var(--warning); border: 1px solid var(--warning); }
+
+.status-banner .spinner-mini {
+  width: 16px; height: 16px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.progress-steps {
+  display: flex;
+  justify-content: space-between;
+  margin: 20px 0;
+  position: relative;
+}
+.progress-steps::before {
+  content: '';
+  position: absolute;
+  top: 18px;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: var(--border);
+  z-index: 0;
+}
+.progress-step {
+  flex: 1;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.progress-step .dot {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--bg-2);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 6px;
+  transition: all .3s;
+}
+.progress-step.active .dot {
+  background: var(--primary);
+  border-color: var(--primary);
+  box-shadow: 0 0 16px var(--primary);
+  color: white;
+}
+.progress-step.done .dot {
+  background: var(--success);
+  border-color: var(--success);
+  color: white;
+}
+.progress-step.active { color: var(--primary); font-weight: 600; }
+.progress-step.done { color: var(--success); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <img src="https://i.postimg.cc/yx314j9t/WA-1781354644910.jpg" class="logo" alt="Ulric-X MD">
+    <h1>ULRIC-X MD</h1>
+    <div class="sub">Multi-User WhatsApp Bot &bull; FINAL v5.0 &bull; 1658+ Commands</div>
+    <div class="owner-badge"><i class="fas fa-crown"></i> Owner: ULRIC X SHAH</div>
+  </header>
+
+  <nav>
+    <a href="/" class="active"><i class="fas fa-link"></i> Pair</a>
+    <a href="/panel"><i class="fas fa-chart-bar"></i> Dashboard</a>
+    <a href="/admin"><i class="fas fa-user-shield"></i> Admin</a>
+  </nav>
+
+  <!-- ───── STATS ───── -->
+  <div class="cards">
+    <div class="card">
+      <div class="ico">📦</div>
+      <div class="label">Commands</div>
+      <div class="value" id="cmdCount">-</div>
+    </div>
+    <div class="card">
+      <div class="ico">👥</div>
+      <div class="label">Paired Users</div>
+      <div class="value" id="userCount">-</div>
+    </div>
+    <div class="card">
+      <div class="ico">🟢</div>
+      <div class="label">Online Now</div>
+      <div class="value" id="onlineCount">-</div>
+    </div>
+    <div class="card">
+      <div class="ico">⏱️</div>
+      <div class="label">Uptime</div>
+      <div class="value" id="uptime" style="font-size:18px;">-</div>
+    </div>
+  </div>
+
+  <!-- ───── PAIR HERO ───── -->
+  <div class="pair-hero">
+    <h2><i class="fas fa-bolt"></i> CONNECT YOUR WHATSAPP</h2>
+    <div class="subtitle">Enter your WhatsApp number with country code to receive a pairing code</div>
+
+    <div class="pair-form">
+      <input type="tel" id="phone" placeholder="923189335011 (with country code)" maxlength="15" autocomplete="off" inputmode="numeric">
+      <button class="btn-primary" id="pairBtn" onclick="doPair()">
+        <i class="fas fa-bolt"></i> Get Pair Code
+      </button>
+    </div>
+
+    <!-- Live status banner -->
+    <div class="status-banner idle" id="statusBanner">
+      <i class="fas fa-circle" style="font-size:8px;"></i>
+      <span id="statusText">Ready to pair</span>
+    </div>
+
+    <!-- Progress steps -->
+    <div class="progress-steps" id="progressSteps" style="display:none;">
+      <div class="progress-step" id="step1">
+        <div class="dot"><i class="fas fa-plug"></i></div>
+        <div>Connect</div>
+      </div>
+      <div class="progress-step" id="step2">
+        <div class="dot"><i class="fas fa-key"></i></div>
+        <div>Code Generated</div>
+      </div>
+      <div class="progress-step" id="step3">
+        <div class="dot"><i class="fas fa-mobile-alt"></i></div>
+        <div>Enter Code</div>
+      </div>
+      <div class="progress-step" id="step4">
+        <div class="dot"><i class="fas fa-check"></i></div>
+        <div>Connected</div>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-spinner" id="loading">
+      <div class="spinner"></div>
+      <div class="loading-text" id="loadingText">⚡ Generating pair code...</div>
+    </div>
+
+    <!-- Error -->
+    <div class="pair-error" id="pairError">
+      <i class="fas fa-exclamation-circle"></i> <span id="errorMsg"></span>
+    </div>
+
+    <!-- Success: Pair code displayed -->
+    <div class="pair-result" id="pairResult">
+      <div class="pair-code-box">
+        <div class="pair-code-label">Your Pairing Code</div>
+        <div class="pair-code-value" id="codeValue">------</div>
+        <div class="pair-code-meta" id="codeMeta">Expires in 5 minutes</div>
+        <button class="copy-btn" onclick="copyCode()">
+          <i class="fas fa-copy"></i> Copy Code
+        </button>
+      </div>
+
+      <div class="instructions">
+        <h3><i class="fas fa-list-ol"></i> How to Link Your WhatsApp</h3>
+        <ol>
+          <li>Open <strong>WhatsApp</strong> on your phone</li>
+          <li>Tap <strong>Settings</strong> → <strong>Linked Devices</strong></li>
+          <li>Tap <strong>Link a Device</strong></li>
+          <li>Tap <strong>"Link with phone number instead"</strong></li>
+          <li>Enter the code: <strong id="codeInline">------</strong></li>
+        </ol>
+        <div class="note">
+          <i class="fas fa-bell"></i>
+          <span>WhatsApp will send a notification to your phone. Tap it to open Linked Devices directly. The page will auto-update when login completes.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success: Connected -->
+    <div class="success-banner" id="connectedBanner" style="display:none; background: linear-gradient(135deg, rgba(74,222,128,0.15), rgba(34,197,94,0.15)); border: 1px solid var(--success); padding: 20px; border-radius: 12px; margin-top: 16px; text-align: center;">
+      <i class="fas fa-check-circle" style="font-size: 32px; color: var(--success); margin-bottom: 10px;"></i>
+      <div style="color: var(--success); font-size: 18px; font-weight: 600; margin-bottom: 8px;">Successfully Connected!</div>
+      <div style="color: var(--text-muted); font-size: 13px;">Your WhatsApp is now linked. Send <code style="background: rgba(0,0,0,0.4); padding: 2px 8px; border-radius: 4px; color: var(--accent);">.menu</code> to your WhatsApp to see all 1658 commands.</div>
+    </div>
+  </div>
+
+  <!-- ───── HOW IT WORKS ───── -->
+  <div class="panel">
+    <h2><i class="fas fa-info-circle"></i> How It Works</h2>
+    <div style="font-size:14px;color:#cbd5e1;line-height:1.8;">
+      <strong style="color:var(--primary)">1.</strong> Enter your <strong>real WhatsApp number</strong> with country code (no + or spaces). Example: <span class="badge">923189335011</span><br>
+      <strong style="color:var(--primary)">2.</strong> Click <strong>Get Pair Code</strong> — code generates in 5-8 seconds.<br>
+      <strong style="color:var(--primary)">3.</strong> WhatsApp sends a <strong>push notification</strong> to your phone — tap it (or open WhatsApp → Linked Devices).<br>
+      <strong style="color:var(--primary)">4.</strong> Tap <strong>Link a Device</strong> → <strong>Link with phone number instead</strong>.<br>
+      <strong style="color:var(--primary)">5.</strong> Enter the 8-digit code. <strong>This page will auto-update</strong> when login completes.<br>
+      <strong style="color:var(--success)">6.</strong> Session is saved permanently. No need to re-pair on restart.
+    </div>
+  </div>
+
+  <div class="footer">
+    &copy; 2024 Ulric-X MD FINAL v5.0 &bull; <span class="heart">❤</span> Built by ULRIC X SHAH<br>
+    Owner WhatsApp: +923189335011 &bull; Powered by Baileys &bull; 100% Free APIs
+  </div>
+
+</div>
+
+<script>
+let currentCode = null;
+let currentJid = null;
+let statusInterval = null;
+
+// Load stats
+async function loadState() {
+  try {
+    const r = await fetch('/api/state').then(r => r.json());
+    if (r.ok) {
+      document.getElementById('cmdCount').textContent = r.stats.totalCommands || 0;
+      document.getElementById('userCount').textContent = r.users.length;
+      document.getElementById('onlineCount').textContent = r.connections.filter(c => c.status === 'open').length;
+      document.getElementById('uptime').textContent = r.stats.uptime || '-';
+    }
+  } catch (e) { console.error(e); }
+}
+
+// Update status banner
+function updateStatusBanner(status, error) {
+  const banner = document.getElementById('statusBanner');
+  const text = document.getElementById('statusText');
+  banner.className = 'status-banner show ' + status;
+
+  const messages = {
+    'idle': '<i class="fas fa-circle" style="font-size:8px;"></i> Ready to pair',
+    'requesting': '<div class="spinner-mini"></div> Requesting pair code from WhatsApp...',
+    'connecting': '<div class="spinner-mini"></div> Connecting to WhatsApp servers...',
+    'code_generated': '<i class="fas fa-key"></i> Pair code generated! Enter it in WhatsApp',
+    'connected': '<i class="fas fa-check-circle"></i> Successfully connected!',
+    'failed': '<i class="fas fa-exclamation-circle"></i> Failed: ' + (error || 'Unknown error'),
+    'expired': '<i class="fas fa-clock"></i> Pair code expired. Request a new one.'
+  };
+  text.innerHTML = messages[status] || messages.idle;
+
+  // Update progress steps
+  updateProgressSteps(status);
+}
+
+function updateProgressSteps(status) {
+  const steps = ['step1', 'step2', 'step3', 'step4'];
+  steps.forEach(s => {
+    document.getElementById(s).classList.remove('active', 'done');
+  });
+
+  if (status === 'requesting' || status === 'connecting') {
+    document.getElementById('step1').classList.add('active');
+  } else if (status === 'code_generated') {
+    document.getElementById('step1').classList.add('done');
+    document.getElementById('step2').classList.add('done');
+    document.getElementById('step3').classList.add('active');
+  } else if (status === 'connected') {
+    steps.forEach(s => document.getElementById(s).classList.add('done'));
+  }
+}
+
+// Pair
+async function doPair() {
+  const phone = document.getElementById('phone').value.replace(/\D/g, '');
+  const btn = document.getElementById('pairBtn');
+  const loading = document.getElementById('loading');
+  const result = document.getElementById('pairResult');
+  const error = document.getElementById('pairError');
+  const connectedBanner = document.getElementById('connectedBanner');
+
+  // Reset UI
+  result.classList.remove('show');
+  error.classList.remove('show');
+  connectedBanner.style.display = 'none';
+  document.getElementById('progressSteps').style.display = 'flex';
+
+  // Validate
+  if (!phone) { showError('Please enter your WhatsApp number'); return; }
+  if (phone.length < 7) { showError('Number too short. Include country code.'); return; }
+  if (phone.length > 15) { showError('Number too long.'); return; }
+  if (phone.startsWith('0')) { showError('Remove leading 0. Use country code (e.g. 923xxx)'); return; }
+
+  // Show loading
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+  loading.classList.add('show');
+  document.getElementById('loadingText').textContent = '⚡ Connecting to WhatsApp servers...';
+  updateStatusBanner('connecting');
+
+  const messages = [
+    '⚡ Connecting to WhatsApp servers...',
+    '🔐 Requesting pair code...',
+    '📱 WhatsApp is preparing your code...',
+    '✨ Almost there...'
+  ];
+  let msgIdx = 0;
+  const msgInterval = setInterval(() => {
+    msgIdx = (msgIdx + 1) % messages.length;
+    document.getElementById('loadingText').textContent = messages[msgIdx];
+  }, 2000);
+
+  try {
+    const r = await fetch('/api/pair', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ number: phone })
+    }).then(r => r.json());
+
+    clearInterval(msgInterval);
+    loading.classList.remove('show');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-bolt"></i> Get New Code';
+
+    if (r.ok && r.code) {
+      currentCode = r.code;
+      currentJid = r.jid;
+
+      document.getElementById('codeValue').textContent = r.code;
+      document.getElementById('codeInline').textContent = r.code;
+
+      // Calculate expiry
+      const expiresAt = r.expiresAt || (Date.now() + 5 * 60 * 1000);
+      updateExpiryCountdown(expiresAt);
+
+      result.classList.add('show');
+      updateStatusBanner('code_generated');
+      showToast('✅ Pair code generated! Check WhatsApp for notification', 'success');
+
+      // Start polling for status (every 2 seconds)
+      startStatusPolling(r.jid);
+    } else {
+      showError(r.error || 'Failed to generate pair code');
+      updateStatusBanner('failed', r.error);
+    }
+  } catch (e) {
+    clearInterval(msgInterval);
+    loading.classList.remove('show');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-bolt"></i> Get Pair Code';
+    showError('Network error: ' + e.message);
+    updateStatusBanner('failed', e.message);
+  }
+}
+
+// Expiry countdown
+let countdownInterval = null;
+function updateExpiryCountdown(expiresAt) {
+  if (countdownInterval) clearInterval(countdownInterval);
+  const update = () => {
+    const remaining = expiresAt - Date.now();
+    if (remaining <= 0) {
+      document.getElementById('codeMeta').innerHTML = '⚠️ Code expired. Request a new one.';
+      clearInterval(countdownInterval);
+      updateStatusBanner('expired');
+      return;
+    }
+    const mins = Math.floor(remaining / 60000);
+    const secs = Math.floor((remaining % 60000) / 1000);
+    document.getElementById('codeMeta').innerHTML = `⏱️ Expires in ${mins}m ${secs}s`;
+  };
+  update();
+  countdownInterval = setInterval(update, 1000);
+}
+
+// Poll for status every 2 seconds
+function startStatusPolling(jid) {
+  if (statusInterval) clearInterval(statusInterval);
+  statusInterval = setInterval(async () => {
+    try {
+      const r = await fetch(`/api/status/${jid}`).then(r => r.json());
+      if (!r.ok) return;
+
+      // Update status banner
+      if (r.status !== 'code_generated') {
+        updateStatusBanner(r.status, r.error);
+      }
+
+      // Check if connected
+      if (r.connected || r.status === 'connected') {
+        clearInterval(statusInterval);
+        document.getElementById('pairResult').classList.remove('show');
+        document.getElementById('connectedBanner').style.display = 'block';
+        document.getElementById('pairBtn').style.display = 'none';
+        document.getElementById('phone').disabled = true;
+        showToast('🎉 Successfully connected! Send .menu to your WhatsApp', 'success');
+        // Reload after 5 seconds to refresh stats
+        setTimeout(() => location.reload(), 5000);
+      }
+
+      // Check if failed
+      if (r.status === 'failed' || r.status === 'expired') {
+        clearInterval(statusInterval);
+        if (r.status === 'expired') {
+          showError('Pair code expired. Please request a new one.');
+        }
+      }
+    } catch (e) {}
+  }, 2000);
+}
+
+function showError(msg) {
+  const error = document.getElementById('pairError');
+  document.getElementById('errorMsg').textContent = msg;
+  error.classList.add('show');
+  showToast('❌ ' + msg, 'error');
+  setTimeout(() => error.classList.remove('show'), 8000);
+}
+
+function copyCode() {
+  if (!currentCode) return;
+  navigator.clipboard.writeText(currentCode).then(() => {
+    showToast('✅ Code copied to clipboard!', 'success');
+  });
+}
+
+function showToast(msg, type = '') {
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.innerHTML = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+
+document.getElementById('phone').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') doPair();
+});
+
+// Init
+loadState();
+setInterval(loadState, 10000);
+updateStatusBanner('idle');
+</script>
+</body>
+</html>

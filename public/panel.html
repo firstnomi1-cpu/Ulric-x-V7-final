@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ulric-X MD - User Dashboard</title>
+<link rel="icon" href="https://i.postimg.cc/yx314j9t/WA-1781354644910.jpg">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="container">
+  <header>
+    <img src="https://i.postimg.cc/yx314j9t/WA-1781354644910.jpg" class="logo" alt="Ulric-X MD">
+    <h1>USER DASHBOARD</h1>
+    <div class="sub">Ulric-X MD &bull; Live Status &bull; v2.0</div>
+  </header>
+
+  <nav>
+    <a href="/">Pair</a>
+    <a href="/panel" class="active">Dashboard</a>
+    <a href="/admin">Admin</a>
+  </nav>
+
+  <div class="cards">
+    <div class="card">
+      <div class="ico">📦</div>
+      <div class="label">Total Commands</div>
+      <div class="value" id="cmdCount">-</div>
+    </div>
+    <div class="card">
+      <div class="ico">👥</div>
+      <div class="label">Paired Users</div>
+      <div class="value" id="userCount">-</div>
+    </div>
+    <div class="card">
+      <div class="ico">🟢</div>
+      <div class="label">Active Now</div>
+      <div class="value" id="onlineCount">-</div>
+    </div>
+    <div class="card">
+      <div class="ico">📊</div>
+      <div class="label">Commands Run</div>
+      <div class="value" id="cmdRun">-</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>👥 Paired Users <button class="refresh-btn" onclick="loadState()">🔄 Refresh</button></h2>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Number</th><th>Country</th><th>Status</th><th>Commands</th><th>Paired</th></tr>
+      </thead>
+      <tbody id="usersTable">
+        <tr><td colspan="6" style="text-align:center;color:#6b7280;">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>🔗 Quick Commands</h2>
+    <p style="font-size:13px;color:#9aa5b6;margin-bottom:10px;">
+      Send these to your WhatsApp after pairing:
+    </p>
+    <table>
+      <tr><td><code>.menu</code></td><td>Show main menu</td></tr>
+      <tr><td><code>.allmenu</code></td><td>List all 1000+ commands</td></tr>
+      <tr><td><code>.ownermenu</code></td><td>Owner commands</td></tr>
+      <tr><td><code>.ai &lt;question&gt;</code></td><td>Ask AI (free)</td></tr>
+      <tr><td><code>.ytmp3 &lt;url&gt;</code></td><td>Download YouTube audio</td></tr>
+      <tr><td><code>.sticker</code></td><td>Create sticker from image</td></tr>
+      <tr><td><code>.quran</code></td><td>Random Quran verse</td></tr>
+      <tr><td><code>.weather &lt;city&gt;</code></td><td>Get weather</td></tr>
+    </table>
+  </div>
+
+  <div class="footer">
+    &copy; 2024 Ulric-X MD &bull; ULRIC X SHAH
+  </div>
+</div>
+
+<script>
+async function loadState() {
+  try {
+    const r = await fetch('/api/state').then(r => r.json());
+    if (!r.ok) return;
+    document.getElementById('cmdCount').textContent = r.stats.totalCommands || 0;
+    document.getElementById('userCount').textContent = r.users.length;
+    document.getElementById('onlineCount').textContent = r.connections.filter(c => c.status === 'open').length;
+    document.getElementById('cmdRun').textContent = r.stats.totalCommandsRun || 0;
+    const tb = document.getElementById('usersTable');
+    if (!r.users.length) {
+      tb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#6b7280;">No paired users yet</td></tr>';
+      return;
+    }
+    tb.innerHTML = r.users.map((u, i) => {
+      const conn = r.connections.find(c => c.jid === u.jid);
+      const status = conn ? conn.status : 'offline';
+      return `<tr>
+        <td>${i+1}</td>
+        <td>${u.hidden}</td>
+        <td>${u.country}</td>
+        <td><span class="status-dot status-${status}"></span>${status}</td>
+        <td>${u.commandsRun}</td>
+        <td>${new Date(u.pairedAt).toLocaleDateString()}</td>
+      </tr>`;
+    }).join('');
+  } catch (e) { console.error(e); }
+}
+loadState();
+setInterval(loadState, 5000);
+</script>
+</body>
+</html>
