@@ -1,0 +1,52 @@
+{
+  "name": "ulric-x-md",
+  "version": "2.0.0",
+  "description": "Ulric-X MD - Powerful Multi-User WhatsApp Bot with Web Panel (1000+ commands)",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "pair": "node pair.js",
+    "panel": "node server.js",
+    "pm2": "pm2 start ecosystem.config.js",
+    "pm2:restart": "pm2 restart ulric-x-md",
+    "pm2:logs": "pm2 logs ulric-x-md",
+    "pm2:stop": "pm2 stop ulric-x-md"
+  },
+  "keywords": [
+    "whatsapp",
+    "bot",
+    "baileys",
+    "ulric-x",
+    "multi-user",
+    "web-panel"
+  ],
+  "author": "ULRIC X SHAH",
+  "license": "MIT",
+  "dependencies": {
+    "@distube/ytdl-core": "^4.14.4",
+    "@whiskeysockets/baileys": "^6.7.7",
+    "axios": "^1.7.2",
+    "chalk": "^4.1.2",
+    "cheerio": "^1.0.0",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "figlet": "^1.7.0",
+    "fluent-ffmpeg": "^2.1.3",
+    "google-tts-api": "^2.0.2",
+    "link-preview-js": "^3.0.5",
+    "moment-timezone": "^0.5.45",
+    "node-cache": "^4.2.0",
+    "node-cron": "^3.0.3",
+    "pino": "^9.1.0",
+    "qrcode": "^1.5.3",
+    "qrcode-terminal": "^0.12.0",
+    "qrcodejs2": "^0.0.2",
+    "sharp": "^0.33.4",
+    "yt-search": "^2.10.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

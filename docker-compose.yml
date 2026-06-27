@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  ulric-x-md:
+    build: .
+    container_name: ulric-x-md
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      # Persist sessions and database between restarts
+      - ./sessions:/app/sessions
+      - ./database:/app/database
+      - ./logs:/app/logs
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - ADMIN_PASS=ulricx_admin_2024
+      - SESSION_SECRET=ulric-x-secret-key-change-me
+      - MAX_PAIR_USERS=1000
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/api/state',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

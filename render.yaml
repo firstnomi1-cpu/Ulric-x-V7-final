@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: ulric-x-md
+    runtime: node
+    plan: free
+    region: oregon
+    branch: main
+    rootDir: .
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/state
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: ADMIN_PASS
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: MAX_PAIR_USERS
+        value: "1000"
+    disk:
+      name: ulric-data
+      mountPath: /app/data
+      sizeGB: 1

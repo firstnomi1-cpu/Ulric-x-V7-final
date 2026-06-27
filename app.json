@@ -1,0 +1,33 @@
+{
+  "name": "Ulric-X MD WhatsApp Bot",
+  "description": "Multi-User WhatsApp Bot with Web Panel - 1000+ commands, free APIs, no paid keys required.",
+  "logo": "https://i.postimg.cc/yx314j9t/WA-1781354644910.jpg",
+  "keywords": ["whatsapp", "bot", "baileys", "ulric-x", "multi-user"],
+  "website": "https://github.com/ulric-x/ulric-x-md",
+  "repository": "https://github.com/ulric-x/ulric-x-md",
+  "env": {
+    "ADMIN_PASS": {
+      "description": "Password for the admin web panel",
+      "value": "ulricx_admin_2024"
+    },
+    "SESSION_SECRET": {
+      "description": "Random secret for session encryption",
+      "generator": "secret"
+    },
+    "MAX_PAIR_USERS": {
+      "description": "Maximum number of paired WhatsApp users",
+      "value": "1000"
+    }
+  },
+  "addons": [],
+  "buildpacks": [
+    { "url": "https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest" },
+    { "url": "heroku/nodejs" }
+  ],
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  }
+}
